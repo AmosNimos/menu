@@ -1,0 +1,114 @@
+#!/bin/bash
+################################################################################
+# Name:        menu
+# Date:        2024-04-21
+# Author:      Amosnimos
+# Description: A simple cli menu selection utility
+################################################################################
+
+# ▙▗▌▛▀▘▙ ▌▌ ▌
+# ▌▘▌▙▄ ▌▌▌▌ ▌
+# ▌ ▌▌  ▌▝▌▌ ▌
+# ▘ ▘▀▀▘▘ ▘▝▀ 
+
+
+. flag "$@"
+
+# Initialize the selected index
+selected=0
+
+UPKEY="w"
+DOWNKEY="s"
+
+# This will be printed above the menu
+header="____________________\n____________________"
+# This will be printed above the menu
+footer="____________________\n____________________"
+
+# This will be placed in front of the selected text
+active_symbol=" -> "
+inactive_symbol="  . "
+
+header_foreground_color="332BFF"
+header_background_color="00FF00"
+
+footer_foreground_color="332BFF"
+footer_background_color="00FF00"
+
+active_foreground_color="FFFFFF"
+active_background_color="FF0000"
+
+inactive_foreground_color="CCCCCC"
+inactive_background_color="000000"
+
+# For the selection
+# Get color for the foreground
+# Separated by spaces it fetch the color for the selected and unselected text
+if [[ -n "$flag_A" ]]; then
+    #example flag_F is equal to "ff0000 00ff00" the first value would be fore the on_foreground_color and the second for the off_foreground color
+    active_foreground_color="${flag_F%% *}"
+    active_background_color="${flag_B%% *}"
+fi
+
+# Get the color for the background
+# Separated by spaces it fetch the color for the selected and unselected text
+if [[ -n "$flag_I" ]]; then
+    inactive_background_color="${flag_B##* }"
+    inactive_foreground_color="${flag_F##* }"
+fi
+
+# Alignement/Placement
+if [[ -n "$flag_P" ]]; then
+    # options are l* c* r* for left center and right
+    # maybe the text alignement could be handle by an external script specialised for that
+    alignment="${flag_A%% *}"
+fi
+
+# Function to print the menu
+print_menu() {
+    clear
+    huston -K "$header_background_color" -H "$header_foreground_color" -T "$header" 
+    for i in "${!options[@]}"; do
+        if [ $i -eq $selected ]; then
+            element="$active_symbol${options[i]}"
+            huston -K "$active_background_color" -H "$active_foreground_color" -T "$element" 
+        else
+            element="$inactive_symbol${options[i]}"
+            huston -K "$inactive_background_color" -H "$inactive_foreground_color" -T "$element" 
+        fi
+    done
+    huston -K "$header_background_color" -H "$header_foreground_color" -T "$footer" 
+}
+
+# Function to handle key presses
+keypress() {
+    read -rsn1 key
+    echo "$key"
+    case "$key" in
+        $UPKEY) ((selected--));;
+        $DOWNKEY) ((selected++));;
+        "") selected_enter=true;;
+    esac
+    if [ $selected -lt 0 ]; then
+        selected=$((${#options[@]} - 1))
+    fi
+    if [ $selected -ge ${#options[@]} ]; then
+        selected=0
+    fi
+}
+
+# Main loop
+# Define the menu options
+if [[ $# -ge 1 ]]; then
+    options=("$@")
+    while true; do
+        print_menu
+        keypress
+        
+        if [[ -n "$selected_enter" ]]; then
+            echo "selected: ${options[selected]}"
+            echo "index: $selected"
+            break
+        fi
+    done
+fi
